@@ -34,7 +34,6 @@ func GetItem(itemId int) *models.ToDoItem {
 		fmt.Fprintf(os.Stderr, "GetItem failed: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Println(id)
 	defer conn.Close(context.Background())
 	return models.NewToDoItem(id, name, description)
 }
@@ -69,12 +68,12 @@ func GetOpenToDoItems() []models.ToDoItem {
 
 func CreateNewToDoItem(item models.ToDoItem) *models.ToDoItem {
 	conn := getConnection()
+	defer conn.Close(context.Background())
 	var id int
 	err := conn.QueryRow(context.Background(), "INSERT INTO \"Items\" (\"Name\", \"Description\") VALUES ($1, $2) RETURNING \"Id\"", item.Name, item.Description).Scan(&id)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "CreateNewToDoItem failed: %v\n", err)
 	}
-	defer conn.Close(context.Background())
 
 	return GetItem(id)
 }
