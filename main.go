@@ -2,29 +2,57 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
 	"slices"
 	"strconv"
 	"todo/database"
 	"todo/models"
+
+	"github.com/jedib0t/go-pretty/table"
+)
+
+var (
+	list     = flag.Bool("list", false, "List all items in To-Do")
+	new      = flag.Bool("new", false, "Create a new to-do items")
+	complete = flag.Int("complete", 0, "Id for the item to mark complete")
+	show     = flag.Int("show", -1, "Id for the item to show")
 )
 
 func main() {
 	// todo := database.GetItem(1)
 	// fmt.Println(todo)
+	flag.Parse()
 
 	cmdArgs := os.Args[1:]
+	if len(cmdArgs) == 0 {
+		fmt.Println(`
+			No argument specified.
 
-	if slices.Contains(cmdArgs, "list") {
+			Options:
+			
+			list: show all To-Do Items
+
+			new: Create a new Item
+
+			complete: mark a to-do item as complete.
+		`)
+	}
+
+	if isCommand("list", cmdArgs) {
 		listAllOpenItems()
 	}
 
-	if slices.Contains(cmdArgs, "new") {
+	if isCommand("new", cmdArgs) {
 		createNewItem()
 	}
 
-	if slices.Contains(cmdArgs, "complete") {
+	if isCommand("-show", cmdArgs) {
+		showItem(cmdArgs)
+	}
+
+	if isCommand("complete", cmdArgs) {
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Print("ToDo Item Name: ")
 		id, _ := reader.ReadString('\n')
@@ -40,6 +68,14 @@ func main() {
 	// fmt.Println(newItem)
 
 	// database.GetOpenToDoItems()
+}
+
+func isCommand(cmdName string, args []string) bool {
+	if slices.Contains(args, cmdName) {
+		return true
+	} else {
+		return false
+	}
 }
 
 func listAllOpenItems() {
@@ -72,4 +108,28 @@ func setItemComplete(itemId int) {
 	item.IsComplete = true
 
 	database.UpdateToDoItem(item)
+}
+
+func showItem(cmdArgs []string) {
+	item := database.GetItem(*show)
+	items := [1]models.ToDoItem{*item}
+	printToDoItem(items)
+}
+
+func printToDoItem(items []models.ToDoItem) {
+
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"#", "Name", "Description", "IsComplete"})
+	// t.AppendSeparator()
+	for _, v := range items {
+		t.AppendRow([]interface{}{v.Id, v.Name, v.Description, v.IsComplete})
+	}
+
+	t.Render()
+
+	// fmt.Printf("%v  |", item.Id)
+	// fmt.Printf(" %v  |", item.Name)
+	// fmt.Printf(" %v  |", item.Description)
+	// fmt.Printf(" %v \n", item.IsComplete)
 }
