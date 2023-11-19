@@ -11,7 +11,7 @@ import (
 )
 
 func getConnection() *pgx.Conn {
-	dbUrl := "postgres://db_user:db_password@localhost:5432/ToDo"
+	dbUrl := "postgres://db_user:db_password@localhost:5432/todo"
 	conn, err := pgx.Connect(context.Background(), dbUrl)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
@@ -88,4 +88,43 @@ func UpdateToDoItem(item *models.ToDoItem) *models.ToDoItem {
 	}
 
 	return GetItem(item.Id)
+}
+
+func ValidateDatabaseUp(){
+	dbUrl := "postgres://db_user:db_password@localhost:5432"
+	dbConn, err := pgx.Connect(context.Background(), dbUrl)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
+	}
+	
+	fmt.Println("Checking if database exists")
+	r := dbConn.QueryRow(context.Background(), "SELECT COUNT(datname) FROM pg_catalog.pg_database WHERE datname = 'todo'")
+	count := -1
+	_ = r.Scan(&count)
+
+	if(count == 0 ){
+		fmt.Println("  -Database Not Present")
+		_, err := dbConn.Exec(context.Background(), "CREATE DATABASE ToDo")
+		if err != nil {
+			fmt.Println(err)
+		}
+	} else {
+		fmt.Println("  -Database already exists.")
+	}
+	dbConn.Close(context.Background())
+
+	fmt.Println("  -Checking if table exists")
+	conn := getConnection()
+	tableCount := -1
+	tr := conn.QueryRow(context.Background(), "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'Items'")
+	_ = tr.Scan(&tableCount)
+	
+	if(tableCount == 0){
+		fmt.Println("  -Table does not exist.")
+		
+
+	} else {
+		fmt.Println("  -Table exists.")
+	}
 }

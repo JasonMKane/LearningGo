@@ -39,7 +39,7 @@ func main() {
 			complete: mark a to-do item as complete.
 		`)
 	}
-
+	database.ValidateDatabaseUp()
 	if isCommand("list", cmdArgs) {
 		listAllOpenItems()
 	}
@@ -112,7 +112,7 @@ func setItemComplete(itemId int) {
 
 func showItem(cmdArgs []string) {
 	item := database.GetItem(*show)
-	items := [1]models.ToDoItem{*item}
+	items := []models.ToDoItem{*item}
 	printToDoItem(items)
 }
 
